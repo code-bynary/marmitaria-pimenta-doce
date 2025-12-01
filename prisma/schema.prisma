@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Ingredient {
+  id        Int      @id @default(autoincrement())
+  name      String
+  unit      String   // e.g., kg, L, unit
+  cost      Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productIngredients ProductIngredient[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ingredients ProductIngredient[]
+  saleItems   SaleItem[]
+}
+
+model ProductIngredient {
+  id           Int        @id @default(autoincrement())
+  productId    Int
+  ingredientId Int
+  quantity     Float      // Quantity of ingredient used in this product
+  
+  product      Product    @relation(fields: [productId], references: [id])
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  address   String?
+  balance   Float    @default(0) // Positive means they owe, negative means credit (or vice versa, usually positive = debt)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales     Sale[]
+}
+
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String
+  contact   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenses  Expense[]
+}
+
+model Sale {
+  id              Int      @id @default(autoincrement())
+  customerId      Int?
+  totalAmount     Float
+  paymentMethod   String   // e.g., "Cash", "Card", "Pix"
+  paymentStatus   String   // "Paid", "Pending"
+  createdAt       DateTime @default(now())
+  
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  items           SaleItem[]
+}
+
+model SaleItem {
+  id        Int      @id @default(autoincrement())
+  saleId    Int
+  productId Int
+  quantity  Int
+  unitPrice Float
+  
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Expense {
+  id            Int      @id @default(autoincrement())
+  description   String
+  amount        Float
+  supplierId    Int?
+  paymentMethod String?
+  status        String   // "Paid", "Pending"
+  dueDate       DateTime?
+  paidDate      DateTime?
+  createdAt     DateTime @default(now())
+
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+}
